@@ -28,7 +28,9 @@ export class RelatedNotesSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Related Notes Settings'});
+		new Setting(containerEl)
+			.setName('Plugin settings')
+			.setHeading();
 
 		new Setting(containerEl)
 			.setName('Auto-update on file changes')

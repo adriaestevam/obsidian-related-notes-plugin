@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Notice, Plugin, TFile, TFolder, CachedMetadata } from 'obsidian';
+import { Notice, Plugin, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, RelatedNotesSettings, RelatedNotesSettingTab } from "./settings";
 
 interface NoteInfo {
@@ -19,10 +19,10 @@ export default class RelatedNotesPlugin extends Plugin {
 		this.addSettingTab(new RelatedNotesSettingTab(this.app, this));
 
 		// Register file events
-		this.registerEvent(
+			this.registerEvent(
 			this.app.vault.on('create', (file) => {
 				if (file instanceof TFile && this.shouldProcessFile(file)) {
-					this.processNote(file);
+					void this.processNote(file);
 				}
 			})
 		);
@@ -30,7 +30,7 @@ export default class RelatedNotesPlugin extends Plugin {
 		this.registerEvent(
 			this.app.vault.on('modify', (file) => {
 				if (file instanceof TFile && this.shouldProcessFile(file)) {
-					this.processNote(file);
+					void this.processNote(file);
 				}
 			})
 		);
@@ -48,12 +48,12 @@ export default class RelatedNotesPlugin extends Plugin {
 			id: 'update-all-related-notes',
 			name: 'Update all related notes',
 			callback: () => {
-				this.updateAllNotes();
+				void this.updateAllNotes();
 			}
 		});
 
 		// Initial scan
-		this.updateAllNotes();
+		void this.updateAllNotes();
 	}
 
 	onunload() {
@@ -61,7 +61,7 @@ export default class RelatedNotesPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as RelatedNotesSettings;
 	}
 
 	async saveSettings() {
@@ -81,7 +81,7 @@ export default class RelatedNotesPlugin extends Plugin {
 	}
 
 	extractTags(content: string): string[] {
-		const tagRegex = /#([a-zA-Z0-9_\-\/]+)/g;
+		const tagRegex = /#([a-zA-Z0-9_\-/]+)/g;
 		const tags: string[] = [];
 		let match;
 
@@ -109,7 +109,11 @@ export default class RelatedNotesPlugin extends Plugin {
 			const wordRegex = new RegExp(`\\b${tag}\\b(?!.*#${tag})`, 'gi');
 
 			// Replace with #tag, but avoid replacing in code blocks or already tagged words
-			modifiedContent = modifiedContent.replace(wordRegex, (match, offset, fullText) => {
+			modifiedContent = modifiedContent.replace(wordRegex, (...args: [string, string, number, string]) => {
+				const match = args[0];
+				const offset = args[2];
+				const fullText = args[3];
+
 				// Check if we're in a code block
 				const beforeMatch = fullText.substring(0, offset);
 				const codeBlockCount = (beforeMatch.match(/```/g) || []).length;
