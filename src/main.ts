@@ -399,8 +399,8 @@ export default class RelatedNotesPlugin extends Plugin {
 				const tags = this.extractTags(content);
 				const potentialTags = this.extractPotentialTags(content);
 
-				// Combine actual tags and potential tags for relationship detection
-				const allTagsForNote = [...new Set([...tags, ...potentialTags])];
+				// Only use actual tags (with #) for relationship detection after conversion
+				const allTagsForNote = [...new Set([...tags])];
 
 				const noteInfo: NoteInfo = {
 					file,
