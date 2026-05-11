@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+ import { App, PluginSettingTab, Setting } from "obsidian";
 import RelatedNotesPlugin from "./main";
 
 export interface RelatedNotesSettings {
@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: RelatedNotesSettings = {
 	ignoredFolders: [],
 	autoUpdate: true,
 	sectionTitle: "Related Notes",
-	autoConvertWords: true
+	autoConvertWords: false
 }
 
 export class RelatedNotesSettingTab extends PluginSettingTab {
