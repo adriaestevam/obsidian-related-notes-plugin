@@ -1,10 +1,10 @@
 {
 	"id": "related-notes-plugin",
 	"name": "Related Notes Plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Automatically creates links between notes that share tags.",
-	"author": "Your Name",
-	"authorUrl": "https://yourwebsite.com",
+	"author": "Adria",
+	"authorUrl": "https://github.com/adriaestevam",
 	"isDesktopOnly": false
 }
