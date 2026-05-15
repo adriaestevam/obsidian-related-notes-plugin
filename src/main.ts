@@ -240,115 +240,10 @@ export default class RelatedNotesPlugin extends Plugin {
 		};
 
 		this.notesCache.set(file.path, noteInfo);
-		await this.findAndUpdateRelatedNotes(file.path);
-	}
-
-	async findAndUpdateRelatedNotes(currentNotePath: string) {
-		const currentNote = this.notesCache.get(currentNotePath);
-		if (!currentNote) return;
-
-		const relatedNotes: string[] = [];
-
-		// Find notes with shared tags
-		for (const [path, note] of this.notesCache) {
-			if (path === currentNotePath) continue;
-
-			const sharedTags = currentNote.tags.filter(tag => note.tags.includes(tag));
-			if (sharedTags.length > 0) {
-				relatedNotes.push(note.file.basename);
-			}
-		}
-
-		currentNote.relatedNotes = relatedNotes;
-		await this.updateRelatedNotesSection(currentNote.file, relatedNotes);
 	}
 
 	removeFromCache(file: TFile): void {
 		this.notesCache.delete(file.path);
-	}
-
-	async updateRelatedNotesSection(file: TFile, relatedNotes: string[]): Promise<void> {
-		try {
-			let content = await this.app.vault.read(file);
-			const lines = content.split('\n');
-
-			const sectionTitle = this.settings.sectionTitle || 'Related Notes';
-			const relatedSectionStart = lines.findIndex(line =>
-				line.trim() === `## ${sectionTitle}`
-			);
-
-			// Get ALL existing tags from entire vault
-			const allVaultTags: string[] = [];
-			const allFiles = this.app.vault.getMarkdownFiles().filter(f => this.shouldProcessFile(f));
-
-			for (const vaultFile of allFiles) {
-				const vaultContent = await this.app.vault.read(vaultFile);
-				const vaultTags = this.extractTags(vaultContent);
-				allVaultTags.push(...vaultTags);
-			}
-			const uniqueVaultTags = [...new Set(allVaultTags)];
-
-			// Extract potential tags from current file
-			const potentialTags = this.extractPotentialTags(content);
-			const existingTags = this.extractTags(content);
-
-			// Find words that match existing tags in vault
-			const tagsToAdd: string[] = [];
-			for (const potentialTag of potentialTags) {
-				if (uniqueVaultTags.includes(potentialTag) && !existingTags.includes(potentialTag)) {
-					tagsToAdd.push(potentialTag);
-				}
-			}
-
-			// Add # to words that match existing vault tags
-			if (tagsToAdd.length > 0) {
-				content = this.addTagsToContent(content, tagsToAdd);
-				new Notice(`Added tags: ${tagsToAdd.join(', ')} to ${file.basename}`);
-			}
-
-			// Update lines with modified content
-			const updatedLines = content.split('\n');
-
-			let newContent: string;
-
-			if (relatedSectionStart !== -1) {
-				// Find the end of the section
-				let sectionEnd = relatedSectionStart + 1;
-				while (sectionEnd < updatedLines.length && updatedLines[sectionEnd] !== undefined && !updatedLines[sectionEnd]!.startsWith('#')) {
-					sectionEnd++;
-				}
-
-				// Remove existing section
-				updatedLines.splice(relatedSectionStart, sectionEnd - relatedSectionStart);
-			}
-
-			// Add new section if there are related notes
-			if (relatedNotes.length > 0) {
-				const sectionLines = [
-					`## ${sectionTitle}`,
-					...relatedNotes.map(note => `- [[${note}]]`),
-					''
-				];
-
-				const insertIndex = relatedSectionStart !== -1 ? relatedSectionStart : updatedLines.length;
-				updatedLines.splice(insertIndex, 0, ...sectionLines);
-			}
-
-			newContent = updatedLines.join('\n');
-
-			// Set last modified file before modifying to prevent infinite loop
-			this.lastModifiedFile = file.path;
-			await this.app.vault.modify(file, newContent);
-
-			// Clear last modified file after a short delay
-			setTimeout(() => {
-				this.lastModifiedFile = '';
-			}, 100);
-		} catch (error) {
-			console.error('Error in updateRelatedNotesSection:', error);
-			new Notice(`Error updating related notes for ${file.basename}: ${error}`);
-			throw error;
-		}
 	}
 
 	async updateAllNotes() {
@@ -412,23 +307,7 @@ export default class RelatedNotesPlugin extends Plugin {
 			}
 
 			// Find relationships and update notes
-			for (const [path, note] of this.notesCache) {
-				const relatedNotes: string[] = [];
-
-				for (const [otherPath, otherNote] of this.notesCache) {
-					if (path === otherPath) continue;
-
-					const sharedTags = note.tags.filter(tag => otherNote.tags.includes(tag));
-					if (sharedTags.length > 0) {
-						relatedNotes.push(otherNote.file.basename);
-					}
-				}
-
-				note.relatedNotes = relatedNotes;
-				await this.updateRelatedNotesSection(note.file, relatedNotes);
-			}
-
-			new Notice(`Updated ${this.notesCache.size} notes with relationships`);
+			new Notice(`Updated ${this.notesCache.size} notes with tags`);
 		} catch (error) {
 			console.error('Error updating all notes:', error);
 			new Notice('Error updating notes');
